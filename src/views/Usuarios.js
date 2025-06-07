@@ -6,7 +6,9 @@ const Usuarios = () => {
   const [usuarios, setUsuarios] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  // Hook de efecto para cargar usuarios al montar el componente
   useEffect(() => {
+    // Obtiene la lista de usuarios desde la API y la guarda en el estado
     const fetchUsuarios = async () => {
       try {
         const response = await api.get('/usuarios');

@@ -18,6 +18,7 @@ const Dashboard = () => {
   const [suscripciones, setSuscripciones] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  // Hook de efecto para cargar datos de pagos, recordatorios y suscripciones al montar el componente
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -40,17 +41,21 @@ const Dashboard = () => {
 
   const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042'];
 
+  // Calcula el gasto mensual sumando los pagos del mes actual
   const gastoMensual = pagos
     .filter(p => new Date(p.fechaPago).getMonth() === new Date().getMonth())
     .reduce((acc, p) => acc + (Number(p.montoPagado) || 0), 0);
 
+  // Calcula la fecha del próximo cobro a partir de los recordatorios
   const proximoCobro = recordatorios
     .map(r => new Date(r.fechaProgramada))
     .filter(date => date >= new Date())
     .sort((a, b) => a - b)[0];
 
+  // Calcula la cantidad de suscripciones activas
   const suscripcionesActivas = suscripciones.filter(s => s.activa).length;
 
+  // Calcula el total pagado por cada método de pago
   const totalPorMetodo = pagos.reduce((acc, pago) => {
     const monto = Number(pago.montoPagado) || 0;
     acc[pago.metodoPago] = (acc[pago.metodoPago] || 0) + monto;

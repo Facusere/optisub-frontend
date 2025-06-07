@@ -12,6 +12,7 @@ import {
 import useAuth from '../hooks/useAuth';
 import api from '../api/axios';
 
+// Maneja el formulario de login y la autenticación del usuario
 const Login = () => {
   const navigate = useNavigate();
   const { login } = useAuth();

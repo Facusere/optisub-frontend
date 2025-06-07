@@ -34,6 +34,12 @@ const Pagos = () => {
     metodoPagoOtro: ''
   });
 
+  // Hook de efecto para cargar pagos y suscripciones al montar el componente
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  // Obtiene la lista de pagos y suscripciones desde la API
   const fetchData = async () => {
     try {
       const [pagosRes, suscripcionesRes] = await Promise.all([
@@ -49,14 +55,12 @@ const Pagos = () => {
     }
   };
 
-  useEffect(() => {
-    fetchData();
-  }, []);
-
+  // Maneja los cambios en los campos del formulario
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
+  // Envía el formulario para crear o actualizar un pago
   const handleSubmit = async (e) => {
     e.preventDefault();
     const payload = {
@@ -79,6 +83,7 @@ const Pagos = () => {
     }
   };
 
+  // Carga los datos de un pago en el formulario para editar
   const handleEdit = (p) => {
     setForm({
       id: p.id,
@@ -90,6 +95,7 @@ const Pagos = () => {
     });
   };
 
+  // Elimina un pago seleccionado tras confirmación
   const handleDelete = async (id) => {
     if (window.confirm('¿Eliminar este pago?')) {
       try {

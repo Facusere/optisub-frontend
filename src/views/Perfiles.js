@@ -34,11 +34,13 @@ const Perfiles = () => {
   // ✅ Eliminamos "Otro" para evitar error con isIn
   const tipos = ['Principal', 'Secundario', 'Niños'];
 
+  // Hook de efecto para cargar perfiles y usuarios al montar el componente
   useEffect(() => {
     fetchPerfiles();
     fetchUsuarios();
   }, []);
 
+  // Obtiene la lista de perfiles desde la API y la guarda en el estado
   const fetchPerfiles = async () => {
     try {
       const res = await api.get('/perfiles');
@@ -50,6 +52,7 @@ const Perfiles = () => {
     }
   };
 
+  // Obtiene la lista de usuarios desde la API y la guarda en el estado
   const fetchUsuarios = async () => {
     try {
       const res = await api.get('/usuarios');
@@ -59,10 +62,12 @@ const Perfiles = () => {
     }
   };
 
+  // Maneja los cambios en los campos del formulario
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
+  // Carga los datos de un perfil en el formulario para editar
   const handleEdit = (perfil) => {
     setForm({
       id: perfil.id,
@@ -72,6 +77,7 @@ const Perfiles = () => {
     });
   };
 
+  // Elimina un perfil seleccionado tras confirmación
   const handleDelete = async (id) => {
     if (window.confirm('¿Deseás eliminar este perfil?')) {
       try {
@@ -83,6 +89,7 @@ const Perfiles = () => {
     }
   };
 
+  // Envía el formulario para crear o actualizar un perfil
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');

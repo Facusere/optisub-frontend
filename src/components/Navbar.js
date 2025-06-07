@@ -2,6 +2,7 @@ import React from 'react';
 import { AppBar, Toolbar, Typography, Button, Stack } from '@mui/material';
 import { Link as RouterLink } from 'react-router-dom';
 
+// Componente de barra de navegación superior con enlaces a las distintas secciones
 const Navbar = () => {
   return (
     <AppBar position="static">

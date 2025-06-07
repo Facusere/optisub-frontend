@@ -14,6 +14,7 @@ import {
 import useAuth from '../hooks/useAuth';
 import api from '../api/axios';
 
+// Maneja el formulario de registro de usuario
 const Register = () => {
   const navigate = useNavigate();
   const { login } = useAuth();

@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 
 export const AuthContext = createContext();
 
+// Proveedor de contexto de autenticación. Maneja login, logout y persistencia del usuario.
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
 
@@ -13,7 +14,7 @@ export const AuthProvider = ({ children }) => {
       }
     } catch (err) {
       console.error('Error al parsear usuario desde localStorage:', err);
-      localStorage.removeItem('user'); // Elimina valor corrupto
+      localStorage.removeItem('user'); 
     }
   }, []);
 
@@ -35,4 +36,5 @@ export const AuthProvider = ({ children }) => {
   );
 };
 
+// Hook para acceder al contexto de autenticación
 export const useAuth = () => useContext(AuthContext);

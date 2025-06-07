@@ -39,6 +39,12 @@ const Suscripciones = () => {
     activa: true
   });
 
+  // Hook de efecto para cargar suscripciones, perfiles y servicios al montar el componente
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  // Obtiene la lista de suscripciones, perfiles y servicios desde la API
   const fetchData = async () => {
     try {
       const [suscripcionesRes, perfilesRes, serviciosRes] = await Promise.all([
@@ -56,10 +62,7 @@ const Suscripciones = () => {
     }
   };
 
-  useEffect(() => {
-    fetchData();
-  }, []);
-
+  // Maneja los cambios en los campos del formulario
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     setForm({
@@ -68,6 +71,7 @@ const Suscripciones = () => {
     });
   };
 
+  // Envía el formulario para crear o actualizar una suscripción
   const handleSubmit = async (e) => {
     e.preventDefault();
     const payload = {
@@ -102,6 +106,7 @@ const Suscripciones = () => {
     }
   };
 
+  // Carga los datos de una suscripción en el formulario para editar
   const handleEdit = (s) => {
     setForm({
       id: s.id,
@@ -115,6 +120,7 @@ const Suscripciones = () => {
     });
   };
 
+  // Elimina una suscripción seleccionada tras confirmación
   const handleDelete = async (id) => {
     if (window.confirm('¿Eliminar esta suscripción?')) {
       try {

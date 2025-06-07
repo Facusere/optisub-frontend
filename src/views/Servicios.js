@@ -44,10 +44,12 @@ const Servicios = () => {
     { id: 10, nombre: 'Otros' }
   ];
 
+  // Hook de efecto para cargar servicios al montar el componente
   useEffect(() => {
     fetchServicios();
   }, []);
 
+  // Obtiene la lista de servicios desde la API y la guarda en el estado
   const fetchServicios = async () => {
     try {
       const res = await api.get('/servicios');
@@ -59,10 +61,12 @@ const Servicios = () => {
     }
   };
 
+  // Maneja los cambios en los campos del formulario
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
+  // Carga los datos de un servicio en el formulario para editar
   const handleEdit = (servicio) => {
     setForm({
       id: servicio.id,
@@ -73,6 +77,7 @@ const Servicios = () => {
     });
   };
 
+  // Elimina un servicio seleccionado tras confirmación
   const handleDelete = async (id) => {
     if (window.confirm('¿Deseás eliminar este servicio?')) {
       try {
@@ -85,6 +90,7 @@ const Servicios = () => {
     }
   };
 
+  // Envía el formulario para crear o actualizar un servicio
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');

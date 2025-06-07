@@ -18,6 +18,7 @@ const theme = createTheme({
   },
 });
 
+// Renderiza la aplicación React y aplica el tema y el contexto de autenticación
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <React.StrictMode>

@@ -31,11 +31,13 @@ const Recordatorios = () => {
 
   const tipos = ['Notificación', 'Email', 'SMS'];
 
+  // Hook de efecto para cargar recordatorios y suscripciones al montar el componente
   useEffect(() => {
     fetchRecordatorios();
     fetchSuscripciones();
   }, []);
 
+  // Obtiene la lista de recordatorios desde la API
   const fetchRecordatorios = async () => {
     try {
       const res = await api.get('/recordatorios');
@@ -47,6 +49,7 @@ const Recordatorios = () => {
     }
   };
 
+  // Obtiene la lista de suscripciones desde la API
   const fetchSuscripciones = async () => {
     try {
       const res = await api.get('/suscripciones');
@@ -56,10 +59,12 @@ const Recordatorios = () => {
     }
   };
 
+  // Maneja los cambios en los campos del formulario
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
+  // Carga los datos de un recordatorio en el formulario para editar
   const handleEdit = (r) => {
     setForm({
       id: r.id,
@@ -69,6 +74,7 @@ const Recordatorios = () => {
     });
   };
 
+  // Elimina un recordatorio seleccionado tras confirmación
   const handleDelete = async (id) => {
     if (window.confirm('¿Deseás eliminar este recordatorio?')) {
       try {
@@ -80,6 +86,7 @@ const Recordatorios = () => {
     }
   };
 
+  // Envía el formulario para crear o actualizar un recordatorio
   const handleSubmit = async (e) => {
     e.preventDefault();
     const payload = {

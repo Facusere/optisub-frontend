@@ -13,6 +13,7 @@ import Recordatorios from './views/Recordatorios';
 import Dashboard from './views/Dashboard';
 import PrivateRoute from './components/PrivateRoute';
 
+// Componente principal de la app. Define las rutas y la navegación.
 const App = () => {
   return (
     <Router>
