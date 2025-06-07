@@ -94,12 +94,27 @@ const Servicios = () => {
       return;
     }
 
+    const isValidUrl = (url) => {
+      return !url || /^https?:\/\/.+\..+/.test(url);
+    };
+
+    if (!isValidUrl(form.logoUrl) || !isValidUrl(form.sitioWeb)) {
+      setError('Las URLs deben comenzar con http:// o https://');
+      return;
+    }
+
+    const categoriaIdNum = parseInt(form.categoriaId);
+    if (isNaN(categoriaIdNum)) {
+      setError('Seleccioná una categoría válida.');
+      return;
+    }
+
     const payload = {
       nombre: form.nombre,
-      categoriaId: parseInt(form.categoriaId),
-      logoUrl: form.logoUrl,
-      sitioWeb: form.sitioWeb
+      categoriaId: categoriaIdNum
     };
+    if (form.logoUrl.trim()) payload.logoUrl = form.logoUrl.trim();
+    if (form.sitioWeb.trim()) payload.sitioWeb = form.sitioWeb.trim();
 
     try {
       if (form.id) {
