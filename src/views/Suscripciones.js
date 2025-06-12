@@ -201,25 +201,31 @@ const Suscripciones = () => {
         <CircularProgress />
       ) : (
         <List>
-          {suscripciones.map((s) => (
-            <ListItem key={s.id} divider
-              secondaryAction={
-                <Stack direction="row" spacing={1}>
-                  <IconButton onClick={() => handleEdit(s)} color="primary">
-                    <EditIcon />
-                  </IconButton>
-                  <IconButton onClick={() => handleDelete(s.id)} color="error">
-                    <DeleteIcon />
-                  </IconButton>
-                </Stack>
-              }
-            >
-              <ListItemText
-                primary={`Monto: ${s.monto} ${s.moneda}`}
-                secondary={`Frecuencia: ${s.frecuencia}, Activa: ${s.activa ? 'Sí' : 'No'}`}
-              />
-            </ListItem>
-          ))}
+          {suscripciones.map((s) => {
+            const perfil = perfiles.find((p) => p.id === s.perfilId);
+            const servicio = servicios.find((serv) => serv.id === s.servicioId);
+            return (
+              <ListItem key={s.id} divider
+                secondaryAction={
+                  <Stack direction="row" spacing={1}>
+                    <IconButton onClick={() => handleEdit(s)} color="primary">
+                      <EditIcon />
+                    </IconButton>
+                    <IconButton onClick={() => handleDelete(s.id)} color="error">
+                      <DeleteIcon />
+                    </IconButton>
+                  </Stack>
+                }
+              >
+                <ListItemText
+                  primary={
+                    `${perfil ? perfil.nombre : 'Perfil'} - ${servicio ? servicio.nombre : 'Servicio'}  ($${s.monto})`
+                  }
+                  secondary={`Frecuencia: ${s.frecuencia}, Activa: ${s.activa ? 'Sí' : 'No'}`}
+                />
+              </ListItem>
+            );
+          })}
         </List>
       )}
     </Container>

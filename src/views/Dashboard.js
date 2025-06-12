@@ -5,7 +5,8 @@ import {
   Typography,
   Grid,
   Paper,
-  CircularProgress
+  CircularProgress,
+  Box
 } from '@mui/material';
 import {
   PieChart, Pie, Cell, Tooltip, ResponsiveContainer,
@@ -79,6 +80,25 @@ const Dashboard = () => {
     monto
   }));
 
+  // Agrupa los pagos por moneda
+  const monedas = Array.from(new Set(pagos.map(p => p.moneda)));
+  const pagosPorMesYMoneda = {};
+  monedas.forEach(moneda => {
+    pagosPorMesYMoneda[moneda] = pagos.filter(p => p.moneda === moneda).reduce((acc, pago) => {
+      const mes = new Date(pago.fechaPago).toLocaleString('default', { month: 'short' });
+      const monto = Number(pago.montoPagado) || 0;
+      acc[mes] = (acc[mes] || 0) + monto;
+      return acc;
+    }, {});
+  });
+  const mesDataPorMoneda = {};
+  monedas.forEach(moneda => {
+    mesDataPorMoneda[moneda] = Object.entries(pagosPorMesYMoneda[moneda]).map(([mes, monto]) => ({
+      name: mes,
+      monto
+    }));
+  });
+
   return (
     <Container>
       <Typography variant="h4" gutterBottom>Dashboard de Gastos</Typography>
@@ -94,41 +114,81 @@ const Dashboard = () => {
             </Paper>
           </Grid>
 
-          <Grid item xs={12} sm={8} md={6}>
-            <Paper sx={{ p: 2 }}>
-              <Typography variant="h6" gutterBottom>Distribución por método de pago</Typography>
-              <ResponsiveContainer width="100%" height={300}>
-                <PieChart>
-                  <Pie
-                    dataKey="value"
-                    data={metodoData}
-                    cx="50%"
-                    cy="50%"
-                    outerRadius={100}
-                    label
-                  >
-                    {metodoData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip />
-                </PieChart>
-              </ResponsiveContainer>
-            </Paper>
+          {/* Gráficos de barras para ARS, USD y EUR alineados en la misma fila */}
+          <Grid item xs={12}>
+            <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', justifyContent: 'center' }}>
+              {['ARS', 'USD', 'EUR'].map((moneda) => {
+                // Asegura que los datos estén ordenados por mes real (enero, febrero, ...)
+                let data = mesDataPorMoneda[moneda] || [];
+                const mesesOrden = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+                data = data.sort((a, b) => mesesOrden.indexOf(a.name) - mesesOrden.indexOf(b.name));
+                return (
+                  <Paper key={moneda} sx={{ p: 2, flex: '1 1 300px', minWidth: 300, maxWidth: 400 }}>
+                    <Typography variant="h6" gutterBottom>Costos mensuales en {moneda}</Typography>
+                    {data.length === 0 ? (
+                      <Typography color="text.secondary">No hay pagos registrados en {moneda}.</Typography>
+                    ) : (
+                      <ResponsiveContainer width="100%" height={300}>
+                        <BarChart data={data}>
+                          <XAxis dataKey="name" />
+                          <YAxis />
+                          <Tooltip />
+                          <Bar dataKey="monto" fill="#1976d2" />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    )}
+                    {/* DEBUG: log data para ver si hay pagos en esta moneda */}
+                    {console.log('Pagos en', moneda, data)}
+                  </Paper>
+                );
+              })}
+            </Box>
           </Grid>
 
-          <Grid item xs={12} sm={8} md={6}>
-            <Paper sx={{ p: 2 }}>
-              <Typography variant="h6" gutterBottom>Pagos por mes</Typography>
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={mesData}>
-                  <XAxis dataKey="name" />
-                  <YAxis />
-                  <Tooltip />
-                  <Bar dataKey="monto" fill="#8884d8" />
-                </BarChart>
-              </ResponsiveContainer>
-            </Paper>
+          {/* Distribución por método de pago separada por moneda (ARS, USD, EUR) */}
+          <Grid item xs={12}>
+            <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', justifyContent: 'center' }}>
+              {['ARS', 'USD', 'EUR'].map((moneda) => {
+                // Usa la misma lógica que el gráfico global pero filtrando por moneda
+                const totalPorMetodo = pagos
+                  .filter(p => p.moneda === moneda)
+                  .reduce((acc, pago) => {
+                    const monto = Number(pago.montoPagado) || 0;
+                    acc[pago.metodoPago] = (acc[pago.metodoPago] || 0) + monto;
+                    return acc;
+                  }, {});
+                const metodoData = Object.entries(totalPorMetodo).map(([metodo, monto]) => ({
+                  name: metodo,
+                  value: monto
+                }));
+                return (
+                  <Paper key={moneda} sx={{ p: 2, flex: '1 1 300px', minWidth: 300, maxWidth: 400 }}>
+                    <Typography variant="h6" gutterBottom>Distribución por método de pago en {moneda}</Typography>
+                    {metodoData.length === 0 ? (
+                      <Typography color="text.secondary">No hay pagos registrados en {moneda}.</Typography>
+                    ) : (
+                      <ResponsiveContainer width="100%" height={300}>
+                        <PieChart>
+                          <Pie
+                            dataKey="value"
+                            data={metodoData}
+                            cx="50%"
+                            cy="50%"
+                            outerRadius={100}
+                            label
+                          >
+                            {metodoData.map((entry, index) => (
+                              <Cell key={`cell-${moneda}-${index}`} fill={COLORS[index % COLORS.length]} />
+                            ))}
+                          </Pie>
+                          <Tooltip />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    )}
+                  </Paper>
+                );
+              })}
+            </Box>
           </Grid>
         </Grid>
       )}

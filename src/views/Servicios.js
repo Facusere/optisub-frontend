@@ -26,9 +26,7 @@ const Servicios = () => {
   const [form, setForm] = useState({
     id: null,
     nombre: '',
-    categoriaId: '',
-    logoUrl: '',
-    sitioWeb: ''
+    categoriaId: ''
   });
 
   const categorias = [
@@ -42,6 +40,31 @@ const Servicios = () => {
     { id: 8, nombre: 'Finanzas y Criptomonedas' },
     { id: 9, nombre: 'Creatividad y Pasatiempos' },
     { id: 10, nombre: 'Otros' }
+  ];
+
+  // Lista de servicios populares para sugerir
+  const serviciosPopulares = [
+    'Netflix',
+    'Spotify',
+    'Amazon Prime Video',
+    'Disney+',
+    'YouTube Premium',
+    'HBO Max',
+    'Apple Music',
+    'Dropbox',
+    'Google Drive',
+    'Microsoft 365',
+    'PlayStation Plus',
+    'Xbox Game Pass',
+    'Paramount+',
+    'Star+',
+    'Deezer',
+    'Crunchyroll',
+    'Audible',
+    'Zoom',
+    'Adobe Creative Cloud',
+    'LinkedIn Premium',
+    'Otro'
   ];
 
   // Hook de efecto para cargar servicios al montar el componente
@@ -71,9 +94,7 @@ const Servicios = () => {
     setForm({
       id: servicio.id,
       nombre: servicio.nombre,
-      categoriaId: servicio.categoriaId,
-      logoUrl: servicio.logoUrl || '',
-      sitioWeb: servicio.sitioWeb || ''
+      categoriaId: servicio.categoriaId
     });
   };
 
@@ -100,15 +121,6 @@ const Servicios = () => {
       return;
     }
 
-    const isValidUrl = (url) => {
-      return !url || /^https?:\/\/.+\..+/.test(url);
-    };
-
-    if (!isValidUrl(form.logoUrl) || !isValidUrl(form.sitioWeb)) {
-      setError('Las URLs deben comenzar con http:// o https://');
-      return;
-    }
-
     const categoriaIdNum = parseInt(form.categoriaId);
     if (isNaN(categoriaIdNum)) {
       setError('Seleccioná una categoría válida.');
@@ -119,8 +131,6 @@ const Servicios = () => {
       nombre: form.nombre,
       categoriaId: categoriaIdNum
     };
-    if (form.logoUrl.trim()) payload.logoUrl = form.logoUrl.trim();
-    if (form.sitioWeb.trim()) payload.sitioWeb = form.sitioWeb.trim();
 
     try {
       if (form.id) {
@@ -129,7 +139,7 @@ const Servicios = () => {
         await api.post('/servicios', payload);
       }
 
-      setForm({ id: null, nombre: '', categoriaId: '', logoUrl: '', sitioWeb: '' });
+      setForm({ id: null, nombre: '', categoriaId: '' });
       fetchServicios();
     } catch (error) {
       console.error('Error al guardar servicio:', error);
@@ -149,13 +159,32 @@ const Servicios = () => {
 
       <Box component="form" onSubmit={handleSubmit} sx={{ mb: 4 }}>
         <Stack spacing={2}>
-          <TextField
-            label="Nombre del servicio"
+          <Select
+            label="Servicio popular"
             name="nombre"
-            value={form.nombre}
-            onChange={handleChange}
+            value={serviciosPopulares.includes(form.nombre) ? form.nombre : 'Otro'}
+            onChange={e => {
+              const value = e.target.value;
+              setForm(f => ({ ...f, nombre: value === 'Otro' ? '' : value }));
+            }}
+            displayEmpty
             required
-          />
+          >
+            <MenuItem value="" disabled>Seleccionar servicio popular</MenuItem>
+            {serviciosPopulares.map((nombre) => (
+              <MenuItem key={nombre} value={nombre}>{nombre}</MenuItem>
+            ))}
+          </Select>
+          {/* Si elige "Otro", muestra el campo para ingresar el nombre manualmente */}
+          {(!serviciosPopulares.includes(form.nombre) || form.nombre === 'Otro') && (
+            <TextField
+              label="Nombre del servicio"
+              name="nombre"
+              value={form.nombre}
+              onChange={handleChange}
+              required
+            />
+          )}
           <Select
             name="categoriaId"
             value={form.categoriaId}
@@ -165,23 +194,9 @@ const Servicios = () => {
           >
             <MenuItem value="" disabled>Seleccionar categoría</MenuItem>
             {categorias.map((cat) => (
-              <MenuItem key={cat.id} value={cat.id}>
-                {cat.nombre}
-              </MenuItem>
+              <MenuItem key={cat.id} value={cat.id}>{cat.nombre}</MenuItem>
             ))}
           </Select>
-          <TextField
-            label="URL del logo (opcional)"
-            name="logoUrl"
-            value={form.logoUrl}
-            onChange={handleChange}
-          />
-          <TextField
-            label="Sitio web (opcional)"
-            name="sitioWeb"
-            value={form.sitioWeb}
-            onChange={handleChange}
-          />
           <Button type="submit" variant="contained">
             {form.id ? 'Actualizar' : 'Agregar'} Servicio
           </Button>

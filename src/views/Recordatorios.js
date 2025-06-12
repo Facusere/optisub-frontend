@@ -21,6 +21,8 @@ import DeleteIcon from '@mui/icons-material/Delete';
 const Recordatorios = () => {
   const [recordatorios, setRecordatorios] = useState([]);
   const [suscripciones, setSuscripciones] = useState([]);
+  const [perfiles, setPerfiles] = useState([]); // Nuevo: perfiles
+  const [servicios, setServicios] = useState([]); // Nuevo: servicios
   const [loading, setLoading] = useState(true);
   const [form, setForm] = useState({
     id: null,
@@ -31,31 +33,28 @@ const Recordatorios = () => {
 
   const tipos = ['Notificación', 'Email', 'SMS'];
 
-  // Hook de efecto para cargar recordatorios y suscripciones al montar el componente
+  // Hook de efecto para cargar recordatorios, suscripciones, perfiles y servicios al montar el componente
   useEffect(() => {
-    fetchRecordatorios();
-    fetchSuscripciones();
+    fetchAllData();
   }, []);
 
-  // Obtiene la lista de recordatorios desde la API
-  const fetchRecordatorios = async () => {
+  // Obtiene la lista de recordatorios, suscripciones, perfiles y servicios desde la API
+  const fetchAllData = async () => {
     try {
-      const res = await api.get('/recordatorios');
-      setRecordatorios(res.data);
+      const [recordatoriosRes, suscripcionesRes, perfilesRes, serviciosRes] = await Promise.all([
+        api.get('/recordatorios'),
+        api.get('/suscripciones'),
+        api.get('/perfiles'),
+        api.get('/servicios')
+      ]);
+      setRecordatorios(recordatoriosRes.data);
+      setSuscripciones(suscripcionesRes.data);
+      setPerfiles(perfilesRes.data);
+      setServicios(serviciosRes.data);
     } catch (error) {
-      console.error('Error al obtener recordatorios:', error);
+      console.error('Error al obtener datos:', error);
     } finally {
       setLoading(false);
-    }
-  };
-
-  // Obtiene la lista de suscripciones desde la API
-  const fetchSuscripciones = async () => {
-    try {
-      const res = await api.get('/suscripciones');
-      setSuscripciones(res.data);
-    } catch (error) {
-      console.error('Error al obtener suscripciones:', error);
     }
   };
 
@@ -79,7 +78,7 @@ const Recordatorios = () => {
     if (window.confirm('¿Deseás eliminar este recordatorio?')) {
       try {
         await api.delete(`/recordatorios/${id}`);
-        fetchRecordatorios();
+        fetchAllData();
       } catch (error) {
         console.error('Error al eliminar recordatorio:', error);
       }
@@ -89,8 +88,24 @@ const Recordatorios = () => {
   // Envía el formulario para crear o actualizar un recordatorio
   const handleSubmit = async (e) => {
     e.preventDefault();
+    // Validación: debe haber una suscripción seleccionada
+    if (!form.suscripcionId) {
+      alert('Seleccioná una suscripción.');
+      return;
+    }
+    // Validación: debe haber tipo y fecha
+    if (!form.tipo || !form.fechaProgramada) {
+      alert('Completá todos los campos.');
+      return;
+    }
+    // Asegura que el ID sea numérico
+    const suscripcionIdNum = parseInt(form.suscripcionId);
+    if (isNaN(suscripcionIdNum)) {
+      alert('Suscripción inválida.');
+      return;
+    }
     const payload = {
-      suscripcionId: parseInt(form.suscripcionId),
+      suscripcionId: suscripcionIdNum,
       tipo: form.tipo,
       fechaProgramada: form.fechaProgramada
     };
@@ -103,10 +118,49 @@ const Recordatorios = () => {
       }
 
       setForm({ id: null, suscripcionId: '', tipo: '', fechaProgramada: '' });
-      fetchRecordatorios();
+      fetchAllData();
     } catch (error) {
       console.error('Error al guardar recordatorio:', error);
+      if (error.response?.data?.error) {
+        alert(error.response.data.error);
+      } else if (error.response?.data?.errores) {
+        alert(error.response.data.errores[0]?.msg || 'Error de validación');
+      } else {
+        alert('Error al guardar recordatorio.');
+      }
     }
+  };
+
+  // Calcula la fecha sugerida de recordatorio: un día antes de la fecha de pago sugerida
+  const getFechaRecordatorioSugerida = (suscripcion) => {
+    if (!suscripcion || !suscripcion.fechaInicio) return '';
+    const inicio = new Date(suscripcion.fechaInicio);
+    const hoy = new Date();
+    let fecha = new Date(inicio);
+    while (fecha < hoy) {
+      if (suscripcion.frecuencia === 'Mensual') {
+        fecha.setMonth(fecha.getMonth() + 1);
+      } else if (suscripcion.frecuencia === 'Anual') {
+        fecha.setFullYear(fecha.getFullYear() + 1);
+      } else if (suscripcion.frecuencia === 'Semanal') {
+        fecha.setDate(fecha.getDate() + 7);
+      } else {
+        break;
+      }
+    }
+    // Si la fecha calculada es mayor a hoy, retrocede un periodo
+    if (fecha > hoy) {
+      if (suscripcion.frecuencia === 'Mensual') {
+        fecha.setMonth(fecha.getMonth() - 1);
+      } else if (suscripcion.frecuencia === 'Anual') {
+        fecha.setFullYear(fecha.getFullYear() - 1);
+      } else if (suscripcion.frecuencia === 'Semanal') {
+        fecha.setDate(fecha.getDate() - 7);
+      }
+    }
+    // Un día antes
+    fecha.setDate(fecha.getDate() - 1);
+    return fecha.toISOString().slice(0, 10);
   };
 
   return (
@@ -115,6 +169,7 @@ const Recordatorios = () => {
 
       <Box component="form" onSubmit={handleSubmit} sx={{ mb: 4 }}>
         <Stack spacing={2}>
+          {/* Selector de suscripción mostrando nombre de perfil y servicio */}
           <Select
             name="suscripcionId"
             value={form.suscripcionId}
@@ -123,11 +178,15 @@ const Recordatorios = () => {
             required
           >
             <MenuItem value="" disabled>Seleccionar suscripción</MenuItem>
-            {suscripciones.map((s) => (
-              <MenuItem key={s.id} value={s.id}>
-                {`Servicio ID: ${s.servicioId} / Perfil ID: ${s.perfilId}`}
-              </MenuItem>
-            ))}
+            {suscripciones.map((s) => {
+              const perfil = perfiles.find(p => p.id === s.perfilId);
+              const servicio = servicios.find(serv => serv.id === s.servicioId);
+              return (
+                <MenuItem key={s.id} value={s.id}>
+                  {perfil ? perfil.nombre : 'Perfil'} - {servicio ? servicio.nombre : 'Servicio'} (${s.monto})
+                </MenuItem>
+              );
+            })}
           </Select>
           <Select
             name="tipo"
@@ -145,7 +204,10 @@ const Recordatorios = () => {
             label="Fecha programada"
             name="fechaProgramada"
             type="date"
-            value={form.fechaProgramada}
+            value={form.fechaProgramada || (() => {
+              const suscripcion = suscripciones.find(s => s.id === parseInt(form.suscripcionId));
+              return getFechaRecordatorioSugerida(suscripcion);
+            })()}
             onChange={handleChange}
             InputLabelProps={{ shrink: true }}
             required
@@ -160,25 +222,31 @@ const Recordatorios = () => {
         <CircularProgress />
       ) : (
         <List>
-          {recordatorios.map((r) => (
-            <ListItem key={r.id} divider
-              secondaryAction={
-                <>
-                  <IconButton onClick={() => handleEdit(r)}>
-                    <EditIcon />
-                  </IconButton>
-                  <IconButton onClick={() => handleDelete(r.id)}>
-                    <DeleteIcon />
-                  </IconButton>
-                </>
-              }
-            >
-              <ListItemText
-                primary={`${r.tipo} - ${r.fechaProgramada}`}
-                secondary={`Suscripción ID: ${r.suscripcionId}`}
-              />
-            </ListItem>
-          ))}
+          {recordatorios.map((r) => {
+            // Opcional: mostrar nombres en la lista de recordatorios
+            const suscripcion = suscripciones.find(s => s.id === r.suscripcionId);
+            const perfil = perfiles.find(p => p.id === (suscripcion ? suscripcion.perfilId : null));
+            const servicio = servicios.find(sv => sv.id === (suscripcion ? suscripcion.servicioId : null));
+            return (
+              <ListItem key={r.id} divider
+                secondaryAction={
+                  <>
+                    <IconButton onClick={() => handleEdit(r)}>
+                      <EditIcon />
+                    </IconButton>
+                    <IconButton onClick={() => handleDelete(r.id)}>
+                      <DeleteIcon />
+                    </IconButton>
+                  </>
+                }
+              >
+                <ListItemText
+                  primary={`${r.tipo} - ${r.fechaProgramada ? r.fechaProgramada.split('T')[0] : ''}`}
+                  secondary={`Suscripción: ${perfil ? perfil.nombre : 'Perfil'} - ${servicio ? servicio.nombre : 'Servicio'}${suscripcion ? ` ($${suscripcion.monto})` : ''}`}
+                />
+              </ListItem>
+            );
+          })}
         </List>
       )}
     </Container>
