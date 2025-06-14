@@ -17,7 +17,8 @@ import {
   MenuItem,
   Select,
   InputLabel,
-  FormControl
+  FormControl,
+  Alert
 } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -27,6 +28,8 @@ const Suscripciones = () => {
   const [loading, setLoading] = useState(true);
   const [perfiles, setPerfiles] = useState([]);
   const [servicios, setServicios] = useState([]);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
 
   const [form, setForm] = useState({
     id: null,
@@ -74,6 +77,8 @@ const Suscripciones = () => {
   // Envía el formulario para crear o actualizar una suscripción
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError('');
+    setSuccess('');
     const payload = {
       perfilId: parseInt(form.perfilId),
       servicioId: parseInt(form.servicioId),
@@ -87,8 +92,10 @@ const Suscripciones = () => {
     try {
       if (form.id) {
         await api.put(`/suscripciones/${form.id}`, payload);
+        setSuccess('Suscripción actualizada');
       } else {
         await api.post('/suscripciones', payload);
+        setSuccess('Suscripción agregada');
       }
       setForm({
         id: null,
@@ -102,6 +109,7 @@ const Suscripciones = () => {
       });
       fetchData();
     } catch (error) {
+      setError('Error al guardar suscripción');
       console.error('Error al guardar suscripción:', error);
     }
   };
@@ -135,6 +143,8 @@ const Suscripciones = () => {
   return (
     <Container>
       <Typography variant="h4" gutterBottom>Suscripciones</Typography>
+      {error && <Alert severity="error">{error}</Alert>}
+      {success && <Alert severity="success">{success}</Alert>}
 
       <Box component="form" onSubmit={handleSubmit} sx={{ mb: 4 }}>
         <Stack spacing={2}>
@@ -200,33 +210,37 @@ const Suscripciones = () => {
       {loading ? (
         <CircularProgress />
       ) : (
-        <List>
-          {suscripciones.map((s) => {
-            const perfil = perfiles.find((p) => p.id === s.perfilId);
-            const servicio = servicios.find((serv) => serv.id === s.servicioId);
-            return (
-              <ListItem key={s.id} divider
-                secondaryAction={
-                  <Stack direction="row" spacing={1}>
-                    <IconButton onClick={() => handleEdit(s)} color="primary">
-                      <EditIcon />
-                    </IconButton>
-                    <IconButton onClick={() => handleDelete(s.id)} color="error">
-                      <DeleteIcon />
-                    </IconButton>
-                  </Stack>
-                }
-              >
-                <ListItemText
-                  primary={
-                    `${perfil ? perfil.nombre : 'Perfil'} - ${servicio ? servicio.nombre : 'Servicio'}  ($${s.monto})`
+        suscripciones.length === 0 ? (
+          <Typography color="text.secondary" sx={{ mt: 2 }}>No hay suscripciones registradas.</Typography>
+        ) : (
+          <List>
+            {suscripciones.map((s) => {
+              const perfil = perfiles.find((p) => p.id === s.perfilId);
+              const servicio = servicios.find((serv) => serv.id === s.servicioId);
+              return (
+                <ListItem key={s.id} divider
+                  secondaryAction={
+                    <Stack direction="row" spacing={1}>
+                      <IconButton onClick={() => handleEdit(s)} color="primary">
+                        <EditIcon />
+                      </IconButton>
+                      <IconButton onClick={() => handleDelete(s.id)} color="error">
+                        <DeleteIcon />
+                      </IconButton>
+                    </Stack>
                   }
-                  secondary={`Frecuencia: ${s.frecuencia}, Activa: ${s.activa ? 'Sí' : 'No'}`}
-                />
-              </ListItem>
-            );
-          })}
-        </List>
+                >
+                  <ListItemText
+                    primary={
+                      `${perfil ? perfil.nombre : 'Perfil'} - ${servicio ? servicio.nombre : 'Servicio'}  ($${Number(s.monto).toLocaleString(undefined, {minimumFractionDigits:2})})`
+                    }
+                    secondary={`Frecuencia: ${s.frecuencia}, Activa: ${s.activa ? 'Sí' : 'No'}, Inicio: ${s.fechaInicio ? new Date(s.fechaInicio).toLocaleDateString() : ''}`}
+                  />
+                </ListItem>
+              );
+            })}
+          </List>
+        )
       )}
     </Container>
   );

@@ -11,6 +11,10 @@ import {
   Select,
   MenuItem
 } from '@mui/material';
+import InputAdornment from '@mui/material/InputAdornment';
+import IconButton from '@mui/material/IconButton';
+import Visibility from '@mui/icons-material/Visibility';
+import VisibilityOff from '@mui/icons-material/VisibilityOff';
 import useAuth from '../hooks/useAuth';
 import api from '../api/axios';
 
@@ -27,6 +31,7 @@ const Register = () => {
   });
 
   const [error, setError] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
 
   const monedas = ['USD', 'ARS', 'EUR', 'Otro'];
 
@@ -62,7 +67,7 @@ const Register = () => {
     <Container maxWidth="xs">
       <Box sx={{ mt: 8 }}>
         <Typography variant="h4" gutterBottom>Registrarse</Typography>
-        <Box component="form" onSubmit={handleSubmit}>
+        <Box component="form" onSubmit={handleSubmit} autoComplete="off">
           <Stack spacing={2}>
             <TextField
               label="Nombre"
@@ -82,10 +87,23 @@ const Register = () => {
             <TextField
               label="Contraseña"
               name="password"
-              type="password"
+              type={showPassword ? 'text' : 'password'}
               value={form.password}
               onChange={handleChange}
               required
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton
+                      aria-label="Mostrar/ocultar contraseña"
+                      onClick={() => setShowPassword((show) => !show)}
+                      edge="end"
+                    >
+                      {showPassword ? <VisibilityOff /> : <Visibility />}
+                    </IconButton>
+                  </InputAdornment>
+                )
+              }}
             />
             <Select
               name="moneda_preferida"
