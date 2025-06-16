@@ -108,7 +108,7 @@ const Dashboard = () => {
     const pagosMes = pagos
       .filter(p => p.moneda === moneda)
       .reduce((acc, pago) => {
-        const mes = new Date(pago.fechaPago).toLocaleString('default', { month: 'short' });
+        const mes = new Date(pago.fechaPago).toLocaleString('en-US', { month: 'short' });
         const monto = Number(pago.montoPagado) || 0;
         acc[mes] = (acc[mes] || 0) + monto;
         return acc;
