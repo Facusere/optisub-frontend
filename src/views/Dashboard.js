@@ -198,6 +198,12 @@ const Dashboard = () => {
     };
   }).filter(s => (s.proximaFecha - hoy) / (1000 * 60 * 60 * 24) <= 7);
 
+  // Calcula la próxima fecha de cobro de todas las suscripciones activas
+  const proximaFechaCobro = suscripcionesActivasList
+    .map(s => getNextDate(s.fechaInicio, s.frecuencia))
+    .filter(date => date instanceof Date && !isNaN(date))
+    .sort((a, b) => a - b)[0];
+
   return (
     <Container>
       <Typography
@@ -254,7 +260,7 @@ const Dashboard = () => {
                   Próximo cobro
                 </Typography>
                 <Typography variant="h5" sx={{ fontWeight: 700, color: '#388e3c' }}>
-                  {proximoCobro ? proximoCobro.toLocaleDateString() : 'N/A'}
+                  {proximaFechaCobro ? proximaFechaCobro.toLocaleDateString() : 'N/A'}
                 </Typography>
               </Paper>
             </Grid>
