@@ -53,6 +53,8 @@ const Dashboard = () => {
         setSuscripciones(suscripcionesRes.data);
         setServicios(serviciosRes.data);
         setPerfiles(perfilesRes.data);
+        // DEBUG: Mostrar pagos en consola para depuración
+        console.log('Pagos recibidos en dashboard:', pagosRes.data);
       } catch (error) {
         console.error('Error al obtener datos:', error);
       } finally {
@@ -62,12 +64,21 @@ const Dashboard = () => {
     fetchData();
   }, []);
 
+  // Normalización de datos de pagos para evitar errores en los cálculos y gráficos
+  const pagosNormalizados = pagos.map(p => ({
+    ...p,
+    montoPagado: Number(p.montoPagado) || 0,
+    moneda: p.moneda || 'ARS',
+    fechaPago: p.fechaPago ? new Date(p.fechaPago) : null,
+    metodoPago: p.metodoPago || 'Otro',
+  })).filter(p => p.fechaPago instanceof Date && !isNaN(p.fechaPago));
+
   const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042'];
 
   // Calcula el gasto mensual sumando los pagos del mes actual
-  const gastoMensual = pagos
-    .filter(p => new Date(p.fechaPago).getMonth() === new Date().getMonth())
-    .reduce((acc, p) => acc + (Number(p.montoPagado) || 0), 0);
+  const gastoMensual = pagosNormalizados
+    .filter(p => p.fechaPago.getMonth() === new Date().getMonth() && p.fechaPago.getFullYear() === new Date().getFullYear())
+    .reduce((acc, p) => acc + p.montoPagado, 0);
 
   // Calcula la fecha del próximo cobro a partir de los recordatorios
   const proximoCobro = recordatorios
@@ -80,9 +91,8 @@ const Dashboard = () => {
   const suscripcionesActivas = suscripcionesActivasList.length;
 
   // Calcula el total pagado por cada método de pago
-  const totalPorMetodo = pagos.reduce((acc, pago) => {
-    const monto = Number(pago.montoPagado) || 0;
-    acc[pago.metodoPago] = (acc[pago.metodoPago] || 0) + monto;
+  const totalPorMetodo = pagosNormalizados.reduce((acc, pago) => {
+    acc[pago.metodoPago] = (acc[pago.metodoPago] || 0) + pago.montoPagado;
     return acc;
   }, {});
 
@@ -91,10 +101,9 @@ const Dashboard = () => {
     value: monto
   }));
 
-  const pagosPorMes = pagos.reduce((acc, pago) => {
-    const mes = new Date(pago.fechaPago).toLocaleString('default', { month: 'short' });
-    const monto = Number(pago.montoPagado) || 0;
-    acc[mes] = (acc[mes] || 0) + monto;
+  const pagosPorMes = pagosNormalizados.reduce((acc, pago) => {
+    const mes = pago.fechaPago.toLocaleString('default', { month: 'short' });
+    acc[mes] = (acc[mes] || 0) + pago.montoPagado;
     return acc;
   }, {});
 
@@ -105,12 +114,11 @@ const Dashboard = () => {
   const mesDataPorMoneda = {};
   monedas.forEach(moneda => {
     // Sumar montos por mes para la moneda
-    const pagosMes = pagos
+    const pagosMes = pagosNormalizados
       .filter(p => p.moneda === moneda)
       .reduce((acc, pago) => {
-        const mes = new Date(pago.fechaPago).toLocaleString('en-US', { month: 'short' });
-        const monto = Number(pago.montoPagado) || 0;
-        acc[mes] = (acc[mes] || 0) + monto;
+        const mes = pago.fechaPago.toLocaleString('en-US', { month: 'short' });
+        acc[mes] = (acc[mes] || 0) + pago.montoPagado;
         return acc;
       }, {});
     // Asegurar que todos los meses estén presentes
@@ -122,34 +130,31 @@ const Dashboard = () => {
 
   // Calcula el gasto mensual y total anual por moneda para el resumen
   const gastoMensualPorMoneda = monedas.reduce((acc, moneda) => {
-    acc[moneda] = pagos
-      .filter(p => p.moneda === moneda && new Date(p.fechaPago).getMonth() === new Date().getMonth())
-      .reduce((sum, p) => sum + (Number(p.montoPagado) || 0), 0);
+    acc[moneda] = pagosNormalizados
+      .filter(p => p.moneda === moneda && p.fechaPago.getMonth() === new Date().getMonth() && p.fechaPago.getFullYear() === new Date().getFullYear())
+      .reduce((sum, p) => sum + p.montoPagado, 0);
     return acc;
   }, {});
   const totalAnualPorMoneda = monedas.reduce((acc, moneda) => {
-    acc[moneda] = pagos
-      .filter(p => p.moneda === moneda && new Date(p.fechaPago).getFullYear() === new Date().getFullYear())
-      .reduce((sum, p) => sum + (Number(p.montoPagado) || 0), 0);
+    acc[moneda] = pagosNormalizados
+      .filter(p => p.moneda === moneda && p.fechaPago.getFullYear() === new Date().getFullYear())
+      .reduce((sum, p) => sum + p.montoPagado, 0);
     return acc;
   }, {});
 
   // Resumen de pagos por método de pago (mensual y anual)
-  const resumenMetodoMensual = pagos.reduce((acc, pago) => {
+  const resumenMetodoMensual = pagosNormalizados.reduce((acc, pago) => {
     const mesActual = new Date().getMonth();
-    const pagoMes = new Date(pago.fechaPago).getMonth();
-    if (pagoMes === mesActual) {
-      const metodo = pago.metodoPago || 'Otro';
-      acc[metodo] = (acc[metodo] || 0) + (Number(pago.montoPagado) || 0);
+    const anioActual = new Date().getFullYear();
+    if (pago.fechaPago.getMonth() === mesActual && pago.fechaPago.getFullYear() === anioActual) {
+      acc[pago.metodoPago] = (acc[pago.metodoPago] || 0) + pago.montoPagado;
     }
     return acc;
   }, {});
-  const resumenMetodoAnual = pagos.reduce((acc, pago) => {
+  const resumenMetodoAnual = pagosNormalizados.reduce((acc, pago) => {
     const anioActual = new Date().getFullYear();
-    const pagoAnio = new Date(pago.fechaPago).getFullYear();
-    if (pagoAnio === anioActual) {
-      const metodo = pago.metodoPago || 'Otro';
-      acc[metodo] = (acc[metodo] || 0) + (Number(pago.montoPagado) || 0);
+    if (pago.fechaPago.getFullYear() === anioActual) {
+      acc[pago.metodoPago] = (acc[pago.metodoPago] || 0) + pago.montoPagado;
     }
     return acc;
   }, {});
@@ -593,11 +598,11 @@ const Dashboard = () => {
               }}
             >
               {['ARS', 'USD', 'EUR'].map((moneda) => {
-                const totalPorMetodo = pagos
+                // Usar pagosNormalizados en vez de pagos para los gráficos de torta
+                const totalPorMetodo = pagosNormalizados
                   .filter(p => p.moneda === moneda)
                   .reduce((acc, pago) => {
-                    const monto = Number(pago.montoPagado) || 0;
-                    acc[pago.metodoPago] = (acc[pago.metodoPago] || 0) + monto;
+                    acc[pago.metodoPago] = (acc[pago.metodoPago] || 0) + pago.montoPagado;
                     return acc;
                   }, {});
                 const metodoData = Object.entries(totalPorMetodo).map(([metodo, monto]) => ({

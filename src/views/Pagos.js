@@ -19,6 +19,7 @@ import {
 } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
+import useAuth from '../hooks/useAuth';
 
 const Pagos = () => {
   const [pagos, setPagos] = useState([]);
@@ -26,6 +27,7 @@ const Pagos = () => {
   const [suscripciones, setSuscripciones] = useState([]);
   const [perfiles, setPerfiles] = useState([]);
   const [servicios, setServicios] = useState([]);
+  const { user } = useAuth();
 
   const [form, setForm] = useState({
     id: null,
@@ -96,7 +98,8 @@ const Pagos = () => {
       montoPagado: parseFloat(montoPagado),
       metodoPago: form.metodoPago === 'Otro' ? form.metodoPagoOtro : form.metodoPago,
       // Agregar moneda del pago según la suscripción
-      moneda: suscripcion.moneda
+      moneda: suscripcion.moneda,
+      userId: user?.id // Agrega el userId al payload
     };
 
     try {
